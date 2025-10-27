@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MCPE ModForge AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'mc-dark': '#1E1E1E',
+              'mc-gray': '#3C3C3C',
+              'mc-light-gray': '#5A5A5A',
+              'mc-green': '#55FF55',
+              'mc-blue': '#00AAAA',
+              'mc-purple': '#AA00AA',
+            },
+            fontFamily: {
+              'sans': ['Inter', 'sans-serif'],
+              'mono': ['Fira Code', 'monospace'],
+            },
+            animation: {
+              'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
+            },
+            keyframes: {
+              'pulse-glow': {
+                '0%, 100%': { boxShadow: '0 0 5px #55FF55, 0 0 10px #55FF55' },
+                '50%': { boxShadow: '0 0 20px #55FF55, 0 0 30px #55FF55' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0"
+  }
+}
+</script>
+</head>
+  <body class="bg-mc-dark text-white font-sans">
+    <div id="root"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

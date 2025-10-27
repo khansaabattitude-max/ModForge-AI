@@ -1,0 +1,5 @@
+{
+  "name": "MCPE ModForge AI",
+  "description": "An AI-powered web app where a user simply types a text prompt describing a Minecraft mod idea, and the system automatically generates ready-to-use MCPE mod files, including code, resources, and explanations.",
+  "requestFramePermissions": []
+}

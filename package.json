@@ -1,0 +1,25 @@
+{
+  "name": "modforge-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-powered Minecraft Mod Generator",
+  "main": "index.js",
+  "scripts": {
+    "dev": "echo 'Run your development server, e.g., vite'",
+    "build": "echo 'Run your build command, e.g., tsc && vite build'",
+    "start": "echo 'Run your start command, e.g., node server.js'"
+  },
+  "dependencies": {
+    "@google/genai": "^1.27.0",
+    "jszip": "^3.10.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.5.3"
+  },
+  "author": "ModForge AI",
+  "license": "UNLICENSED"
+}
