@@ -1,15 +1,10 @@
-// IMPORTANT: This file represents a backend API endpoint.
-// In a real-world deployment on Vercel or Render, this code would run in a serverless function.
-// The frontend would call this endpoint (e.g., /api/modforge) instead of calling the AI directly.
-// This is the ONLY place where the API key is used, ensuring it's never exposed to the client browser.
-
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { GoogleGenAI, Type } from "@google/genai";
-import type { ModData } from '../src/types';
+import type { ModData } from '../../types';
 
-// This function simulates how a backend would securely initialize the AI client.
 function getAI() {
   if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable not set on the server");
+    throw new Error("API_KEY environment variable not set on the server. Please set it in your Vercel project settings.");
   }
   return new GoogleGenAI({ apiKey: process.env.API_KEY });
 }
@@ -67,32 +62,32 @@ const modSchema = {
   required: ['modName', 'explanation', 'requiresExperimental', 'enchantments', 'behaviorPack', 'resourcePack', 'scripts', 'texture_svg']
 };
 
-export async function handleGenerateMod(prompt: string): Promise<ModData> {
+async function handleGenerateMod(prompt: string): Promise<ModData> {
   const ai = getAI();
-  // Step 1: Generate the core mod data
   const modGenResponse = await ai.models.generateContent({
     model: "gemini-2.5-flash",
     contents: `Your task is to act as the ModForge AI core. You must generate complete, correct, and instantly deployable code for a Minecraft Bedrock Add-on based on the user's prompt: "${prompt}".
 
-**CRITICAL INSTRUCTIONS:**
-1.  **Manifest Generation:**
+**CRITICAL INSTRUCTIONS: Output Integrity and Verification**
+1.  **Manifest Integrity:**
     - Generate two unique, valid UUIDs.
     - Create a behavior pack \`manifest.json\` and a resource pack \`manifest.json\`.
-    - **Crucially, the behavior pack's manifest MUST depend on the resource pack's UUID in its dependencies module, and the resource pack's manifest MUST depend on the behavior pack's UUID in its dependencies module.** This is for correct dependency resolution.
+    - **The behavior pack's manifest MUST depend on the resource pack's UUID, and the resource pack's manifest MUST depend on the behavior pack's UUID.** This ensures Minecraft loads the packs together correctly.
     - Both manifests MUST use \`"format_version": 2\` and have a \`min_engine_version\` of at least \`[1, 20, 0]\`.
 
-2.  **Scripting:**
-    - If the mod requires scripting (e.g., custom logic, events), you MUST generate a \`scripts/main.js\` file using the '@minecraft/server' module.
-    - If a script is generated, you MUST set the \`requiresExperimental\` flag to \`true\`.
-    - Also, the behavior pack manifest MUST include a "modules" entry of type "script" with the entry point set correctly to "scripts/main.js".
-    - If no scripting is needed, the "main" property in the "scripts" object should be an empty string, DO NOT include a "script" module in the manifest, and set \`requiresExperimental\` to \`false\`.
+2.  **Scripting Path Validation:**
+    - If the mod's logic requires scripting, you MUST generate a \`scripts/main.js\` file using the '@minecraft/server' module.
+    - When a script is generated, you MUST:
+      a) Set the \`requiresExperimental\` flag in the output to \`true\`.
+      b) Include a "modules" entry of type "script" in the behavior pack's manifest, with the "entry" path set exactly to "scripts/main.js".
+    - If no scripting is needed, the "main" script content must be an empty string, no "script" module should be in the manifest, and \`requiresExperimental\` must be \`false\`.
 
-3.  **File Consistency:**
-    - Ensure all file paths are correct. For example, the item texture file name defined in the resource pack's \`items\` JSON (e.g., \`textures/items/glowing_torch.png\`) must exactly match the \`item_texture\` filename provided in the \`textures\` object.
-    - The item identifier (e.g., \`custom:glowing_torch\`) must be consistent across all relevant files (item JSONs, script files, etc.).
+3.  **File Path Consistency:**
+    - Ensure all file paths are correct. The item texture filename in the resource pack's \`items\` JSON must exactly match the \`item_texture\` filename provided.
+    - The item identifier (e.g., \`custom:glowing_torch\`) must be consistent across all relevant files.
 
 4.  **Enchantments:**
-    - If the user requests enchantments, include them in the 'enchantments' array and ensure the 'scripts/main.js' file contains logic to apply them when the item is created.
+    - If the user requests enchantments, populate the 'enchantments' array and ensure the 'scripts/main.js' file contains the logic to apply them.
 
 5.  **Final Output:**
     - Provide the entire output as a single, valid JSON object matching the provided schema. All JSON and JavaScript content must be complete, escaped strings.`,
@@ -103,28 +98,29 @@ export async function handleGenerateMod(prompt: string): Promise<ModData> {
   });
 
   const jsonText = modGenResponse.text.trim();
-  let modData: Omit<ModData, 'pack_icon_base64'> = JSON.parse(jsonText);
+  let modData: Omit<ModData, 'pack_icon_base64'>;
 
-  // Step 2: Generate the cinematic pack icon
+  try {
+      modData = JSON.parse(jsonText);
+  } catch(e) {
+      console.error("Failed to parse AI JSON response:", jsonText);
+      throw new Error("The AI returned a malformed response. Please try a different prompt.");
+  }
+  
   const imagePrompt = `A cinematic, high-quality, realistic promotional image for a Minecraft mod. The mod's name is "${modData.modName}". The image should serve as a game icon, focusing on the central item described as: "${modData.explanation.substring(0, 250)}". Dramatic lighting, detailed texture.`;
   
   const imageResponse = await ai.models.generateImages({
       model: 'imagen-4.0-generate-001',
       prompt: imagePrompt,
-      config: {
-        numberOfImages: 1,
-        outputMimeType: 'image/png',
-        aspectRatio: '1:1',
-      },
+      config: { numberOfImages: 1, outputMimeType: 'image/png', aspectRatio: '1:1' },
   });
 
   const pack_icon_base64 = imageResponse.generatedImages[0].image.imageBytes;
   
-  // Step 3: Combine and return
   return { ...modData, pack_icon_base64 };
 }
 
-export async function handleModerateReview(feedback: string): Promise<{ decision: 'SAFE' | 'UNSAFE' }> {
+async function handleModerateReview(feedback: string): Promise<{ decision: 'SAFE' | 'UNSAFE' }> {
   const ai = getAI();
   const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -137,4 +133,34 @@ export async function handleModerateReview(feedback: string): Promise<{ decision
   if (result.includes('UNSAFE')) return { decision: 'UNSAFE' };
   
   return { decision: 'SAFE' }; // Fail open
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    const { action, payload } = req.body;
+
+    try {
+        if (action === 'generateMod') {
+            if (!payload || typeof payload.prompt !== 'string') {
+                return res.status(400).json({ error: 'Invalid payload for generateMod' });
+            }
+            const modData = await handleGenerateMod(payload.prompt);
+            return res.status(200).json(modData);
+        } else if (action === 'moderateReview') {
+            if (!payload || typeof payload.feedback !== 'string') {
+                return res.status(400).json({ error: 'Invalid payload for moderateReview' });
+            }
+            const result = await handleModerateReview(payload.feedback);
+            return res.status(200).json(result);
+        } else {
+            return res.status(400).json({ error: 'Invalid action specified' });
+        }
+    } catch (error) {
+        console.error(`Error in API route for action "${action}":`, error);
+        const message = error instanceof Error ? error.message : "An unknown server error occurred.";
+        return res.status(500).json({ error: message });
+    }
 }

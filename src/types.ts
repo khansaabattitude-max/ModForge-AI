@@ -6,6 +6,7 @@ export interface Enchantment {
 export interface ModData {
   modName: string;
   explanation: string;
+  requiresExperimental: boolean;
   enchantments: Enchantment[];
   behaviorPack: {
     manifest: string;

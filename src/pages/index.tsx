@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import type { ModData, OutputTab } from './types';
-import { generateMod, moderateReview } from './services/apiClient';
-import SparklesIcon from './components/icons/SparklesIcon';
-import DownloadIcon from './components/icons/DownloadIcon';
-import ErrorIcon from './components/icons/ErrorIcon';
-import StarIcon from './components/icons/StarIcon';
-import Loader from './components/Loader';
-import CodeBlock from './components/CodeBlock';
+import Head from 'next/head';
+import type { ModData, OutputTab } from '../types';
+import { generateMod, moderateReview } from '../services/apiClient';
+import SparklesIcon from '../components/icons/SparklesIcon';
+import DownloadIcon from '../components/icons/DownloadIcon';
+import ErrorIcon from '../components/icons/ErrorIcon';
+import StarIcon from '../components/icons/StarIcon';
+import Loader from '../components/Loader';
+import CodeBlock from '../components/CodeBlock';
 
 // Declare JSZip for use with the script tag added in index.html
 declare const JSZip: any;
@@ -23,7 +24,7 @@ const samplePrompts = [
   "Armor that changes color when health drops below 50%.",
 ];
 
-const App: React.FC = () => {
+const HomePage: React.FC = () => {
   const [prompt, setPrompt] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +50,6 @@ const App: React.FC = () => {
     setUserFeedback('');
 
     try {
-      // The call now goes to our secure API client
       const data = await generateMod(prompt);
       setModData(data);
       setActiveTab('explanation');
@@ -92,18 +92,6 @@ const App: React.FC = () => {
     }
 
   }, [userRating, userFeedback]);
-
-  const handleDownloadFile = (filename: string, content: string, mimeType: string) => {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
   
   const downloadBlob = (filename: string, blob: Blob) => {
     const url = URL.createObjectURL(blob);
@@ -165,11 +153,9 @@ const App: React.FC = () => {
       zip.file(`resource_pack/manifest.json`, modData.resourcePack.manifest);
       zip.file(`resource_pack/items/${modData.modName}.json`, modData.resourcePack.items);
       
-      // Convert SVG to PNG and add to resource pack
       const textureBlob = await svgToPngBlob(modData.texture_svg, 16, 16);
       zip.file(`resource_pack/${modData.resourcePack.textures.item_texture}`, textureBlob);
       
-      // Decode pack icon and add to both packs
       if (modData.pack_icon_base64) {
         const packIconBytes = atob(modData.pack_icon_base64);
         const packIconArray = new Uint8Array(packIconBytes.length);
@@ -177,12 +163,10 @@ const App: React.FC = () => {
           packIconArray[i] = packIconBytes.charCodeAt(i);
         }
         const packIconBlob = new Blob([packIconArray], { type: 'image/png' });
-
         zip.file(`behavior_pack/pack_icon.png`, packIconBlob);
         zip.file(`resource_pack/pack_icon.png`, packIconBlob);
       }
 
-      // Generate and download the .mcaddon file
       const zipBlob = await zip.generateAsync({ type: "blob" });
       downloadBlob(`${modData.modName}.mcaddon`, zipBlob);
 
@@ -217,7 +201,7 @@ const App: React.FC = () => {
     return (
       <div className="bg-mc-gray/50 border border-mc-light-gray rounded-lg p-6 w-full">
         <h2 className="text-2xl font-bold text-mc-green mb-4">{modData.modName}</h2>
-        <div className="flex border-b border-mc-light-gray mb-4">
+        <div className="flex border-b border-mc-light-gray mb-4 overflow-x-auto">
           <TabButton name="Explanation" id="explanation" activeTab={activeTab} onClick={setActiveTab} />
           <TabButton name="Code Preview" id="code" activeTab={activeTab} onClick={setActiveTab} />
           <TabButton name="Download & Texture" id="download" activeTab={activeTab} onClick={setActiveTab} />
@@ -225,7 +209,7 @@ const App: React.FC = () => {
         </div>
         <div>
           {activeTab === 'explanation' && (
-             <div className="prose prose-invert max-w-none text-gray-300" dangerouslySetInnerHTML={{ __html: modData.explanation.replace(/\n/g, '<br />') }} />
+             <article className="prose prose-invert max-w-none text-gray-300" dangerouslySetInnerHTML={{ __html: modData.explanation.replace(/\n/g, '<br />') }} />
           )}
           {activeTab === 'code' && (
             <div>
@@ -278,44 +262,11 @@ const App: React.FC = () => {
                     <span>Download {modData.modName}.mcaddon</span>
                   </button>
                 </div>
-                
-                <details className="bg-mc-dark/50 rounded-lg border border-mc-light-gray">
-                  <summary className="px-4 py-2 cursor-pointer text-gray-300 hover:text-white">
-                    Download Individual Files (Advanced)
-                  </summary>
-                  <div className="p-4 border-t border-mc-light-gray space-y-2">
-                    {modData.scripts.main && <DownloadButton 
-                      label="behavior_pack/scripts/main.js" 
-                      onClick={() => handleDownloadFile('main.js', modData.scripts.main, 'text/javascript')}
-                    />}
-                    <DownloadButton 
-                      label="behavior_pack/manifest.json" 
-                      onClick={() => handleDownloadFile('manifest.json', modData.behaviorPack.manifest, 'application/json')}
-                    />
-                     <DownloadButton 
-                      label={`behavior_pack/items/${modData.modName}.json`} 
-                      onClick={() => handleDownloadFile(`${modData.modName}.json`, modData.behaviorPack.item, 'application/json')}
-                    />
-                    <DownloadButton 
-                      label="resource_pack/manifest.json" 
-                      onClick={() => handleDownloadFile('manifest.json', modData.resourcePack.manifest, 'application/json')}
-                    />
-                     <DownloadButton 
-                      label={`resource_pack/items/${modData.modName}.json`}
-                      onClick={() => handleDownloadFile(`${modData.modName}.json`, modData.resourcePack.items, 'application/json')}
-                    />
-                    <DownloadButton 
-                      label="texture.svg" 
-                      onClick={() => handleDownloadFile(`${modData.modName}.svg`, modData.texture_svg, 'image/svg+xml')}
-                    />
-                  </div>
-                </details>
               </div>
             </div>
           )}
            {activeTab === 'reviews' && (
             <div className="space-y-8">
-              {/* Review Submission Form */}
               <div className="bg-mc-dark/50 p-4 rounded-lg border border-mc-light-gray">
                 <h3 className="text-lg font-semibold text-mc-blue mb-3">Leave a Review</h3>
                 <div className="flex items-center mb-3">
@@ -351,7 +302,6 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Display Reviews */}
               <div>
                 <h3 className="text-xl font-semibold text-mc-blue mb-4">Community Feedback</h3>
                 {reviews.length === 0 ? (
@@ -378,8 +328,12 @@ const App: React.FC = () => {
     );
   };
   
-
   return (
+    <>
+    <Head>
+      <title>MCPE ModForge AI</title>
+      <meta name="description" content="Turn your Minecraft ideas into reality. Just describe your mod." />
+    </Head>
     <div className="min-h-screen bg-mc-dark flex flex-col items-center p-4 sm:p-8">
       <main className="w-full max-w-4xl mx-auto flex flex-col items-center space-y-8">
         <header className="text-center">
@@ -431,6 +385,7 @@ const App: React.FC = () => {
         </p>
       </footer>
     </div>
+    </>
   );
 };
 
@@ -445,7 +400,7 @@ interface TabButtonProps {
 const TabButton: React.FC<TabButtonProps> = ({ name, id, activeTab, onClick }) => (
   <button
     onClick={() => onClick(id)}
-    className={`px-4 py-2 text-sm font-semibold transition-colors ${
+    className={`px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors ${
       activeTab === id
         ? 'text-mc-green border-b-2 border-mc-green'
         : 'text-gray-400 hover:text-white'
@@ -455,19 +410,4 @@ const TabButton: React.FC<TabButtonProps> = ({ name, id, activeTab, onClick }) =
   </button>
 );
 
-interface DownloadButtonProps {
-  label: string;
-  onClick: () => void;
-}
-
-const DownloadButton: React.FC<DownloadButtonProps> = ({ label, onClick }) => (
-  <button
-    onClick={onClick}
-    className="w-full text-left flex items-center justify-between gap-2 px-3 py-2 text-sm font-mono text-gray-300 bg-mc-gray hover:bg-mc-light-gray rounded-md transition-colors"
-  >
-    <span>{label}</span>
-    <DownloadIcon className="w-4 h-4" />
-  </button>
-);
-
-export default App;
+export default HomePage;
