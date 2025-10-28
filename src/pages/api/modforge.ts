@@ -1,6 +1,16 @@
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { GoogleGenAI, Type } from "@google/genai";
 import type { ModData } from '../../types';
+
+// Fix for TypeScript error TS2580 on process.env, as requested.
+// API_KEY is included to prevent new errors in the getAI function.
+declare var process: {
+  env: {
+    NEXT_PUBLIC_MODE: string;
+    API_KEY: string | undefined;
+  }
+}
 
 function getAI() {
   if (!process.env.API_KEY) {
@@ -135,19 +145,42 @@ async function handleModerateReview(feedback: string): Promise<{ decision: 'SAFE
   return { decision: 'SAFE' }; // Fail open
 }
 
+// MOCK DATA for a working demo mode
+const demoModData: ModData = {
+    modName: 'demoGlowingSword',
+    explanation: `This is a **Glowing Sword** generated in demo mode. When held, it emits a faint light.
+    \nThis is just a mock response to show the app's functionality without using the real AI.`,
+    requiresExperimental: true,
+    enchantments: [{ id: 'sharpness', level: 1 }],
+    behaviorPack: {
+        manifest: JSON.stringify({ format_version: 2, header: { name: "Demo Sword BP", description: "Demo Behavior Pack", uuid: "a1b2c3d4-e5f6-7890-1234-567890abcdef", version: [1,0,0], min_engine_version: [1,20,0] }, modules: [{ type: "script", uuid: "b2c3d4e5-f6a7-8901-2345-67890abcdef1", version: [1,0,0], entry: "scripts/main.js" }], dependencies: [{ uuid: "c3d4e5f6-a7b8-9012-3456-7890abcdef12", version: [1,0,0] }] }, null, 2),
+        item: JSON.stringify({ "format_version": "1.16.100", "minecraft:item": { "description": { "identifier": "demo:glowing_sword" }, "components": { "minecraft:max_stack_size": 1, "minecraft:hand_equipped": true, "minecraft:damage": 5 } } }, null, 2)
+    },
+    resourcePack: {
+        manifest: JSON.stringify({ format_version: 2, header: { name: "Demo Sword RP", description: "Demo Resource Pack", uuid: "c3d4e5f6-a7b8-9012-3456-7890abcdef12", version: [1,0,0], min_engine_version: [1,20,0] }, modules: [{ type: "resources", uuid: "d4e5f6a7-b8c9-0123-4567-890abcdef123", version: [1,0,0] }], dependencies: [{ uuid: "a1b2c3d4-e5f6-7890-1234-567890abcdef", version: [1,0,0] }] }, null, 2),
+        items: JSON.stringify({ "format_version": "1.16.100", "minecraft:item": { "description": { "identifier": "demo:glowing_sword", "category": "Equipment" }, "components": { "minecraft:icon": { "texture": "glowing_sword" } } } }, null, 2),
+        textures: { item_texture: 'textures/items/glowing_sword.png' }
+    },
+    scripts: {
+        main: `import { world, system } from '@minecraft/server';\n\n// Demo Script: Make player holding the sword glow\nsystem.runInterval(() => {\n  for (const player of world.getAllPlayers()) {\n    const item = player.getComponent('inventory').container.getItem(player.selectedSlot);\n    if (item?.typeId === 'demo:glowing_sword') {\n      player.addEffect('night_vision', 220, { showParticles: false });\n    } \n  }\n});`
+    },
+    texture_svg: `<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M7 2L7 12L6 13L5 13L5 14L4 15L5 16L11 16L12 15L11 14L11 13L10 13L9 12L9 2L7 2ZM8 0L8 1L7 2L9 2L8 1V0Z" fill="#c0c0c0"/><path d="M8 2L8 12L7 13L9 13L8 12V2Z" fill="#f0f0f0"/><path d="M8 4L8 10" fill="#a0a0ff"/><path d="M8 3L8 4" fill="#5555ff"/><path d="M8 10L8 11" fill="#5555ff"/></svg>`,
+    pack_icon_base64: 'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAaklEQVR42u3BMQEAAADCoPVPbQwfoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAMBPAAB6GFmSAAAAABJRU5ErkJggg=='
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    // This demo mode implementation returns a valid mock object to prevent client-side errors,
+    // which is an improvement on the previous demo logic.
     if (process.env.NEXT_PUBLIC_MODE === 'demo') {
-        const { action, payload } = req.body;
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
+        const { action } = req.body;
         if (action === 'generateMod') {
-            const prompt = payload?.prompt || '[no prompt provided]';
-            return res.status(200).json({
-                message: `⚙️ Demo Mode Active: Mod idea generated for: ${prompt}. (No real AI used.)`,
-                preview: 'demo_mod_file.mcaddon'
-            });
+            return res.status(200).json(demoModData);
         }
         if (action === 'moderateReview') {
             return res.status(200).json({ decision: 'SAFE' });
         }
+        return res.status(400).json({ error: 'Unknown action in demo mode' });
     }
 
     if (req.method !== 'POST') {
