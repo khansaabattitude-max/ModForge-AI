@@ -136,6 +136,20 @@ async function handleModerateReview(feedback: string): Promise<{ decision: 'SAFE
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    if (process.env.NEXT_PUBLIC_MODE === 'demo') {
+        const { action, payload } = req.body;
+        if (action === 'generateMod') {
+            const prompt = payload?.prompt || '[no prompt provided]';
+            return res.status(200).json({
+                message: `⚙️ Demo Mode Active: Mod idea generated for: ${prompt}. (No real AI used.)`,
+                preview: 'demo_mod_file.mcaddon'
+            });
+        }
+        if (action === 'moderateReview') {
+            return res.status(200).json({ decision: 'SAFE' });
+        }
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }

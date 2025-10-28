@@ -93,6 +93,18 @@ const HomePage: React.FC = () => {
 
   }, [userRating, userFeedback]);
   
+  const handleDownloadFile = (filename: string, content: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const downloadBlob = (filename: string, blob: Blob) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -262,6 +274,37 @@ const HomePage: React.FC = () => {
                     <span>Download {modData.modName}.mcaddon</span>
                   </button>
                 </div>
+                 <details className="bg-mc-dark/50 rounded-lg border border-mc-light-gray">
+                  <summary className="px-4 py-2 cursor-pointer text-gray-300 hover:text-white">
+                    Download Individual Files (Advanced)
+                  </summary>
+                  <div className="p-4 border-t border-mc-light-gray space-y-2">
+                    {modData.scripts.main && <DownloadButton 
+                      label="behavior_pack/scripts/main.js" 
+                      onClick={() => handleDownloadFile('main.js', modData.scripts.main, 'text/javascript')}
+                    />}
+                    <DownloadButton 
+                      label="behavior_pack/manifest.json" 
+                      onClick={() => handleDownloadFile('manifest.json', modData.behaviorPack.manifest, 'application/json')}
+                    />
+                     <DownloadButton 
+                      label={`behavior_pack/items/${modData.modName}.json`} 
+                      onClick={() => handleDownloadFile(`${modData.modName}.json`, modData.behaviorPack.item, 'application/json')}
+                    />
+                    <DownloadButton 
+                      label="resource_pack/manifest.json" 
+                      onClick={() => handleDownloadFile('manifest.json', modData.resourcePack.manifest, 'application/json')}
+                    />
+                     <DownloadButton 
+                      label={`resource_pack/items/${modData.modName}.json`}
+                      onClick={() => handleDownloadFile(`${modData.modName}.json`, modData.resourcePack.items, 'application/json')}
+                    />
+                    <DownloadButton 
+                      label="texture.svg" 
+                      onClick={() => handleDownloadFile(`${modData.modName}.svg`, modData.texture_svg, 'image/svg+xml')}
+                    />
+                  </div>
+                </details>
               </div>
             </div>
           )}
@@ -407,6 +450,21 @@ const TabButton: React.FC<TabButtonProps> = ({ name, id, activeTab, onClick }) =
     }`}
   >
     {name}
+  </button>
+);
+
+interface DownloadButtonProps {
+  label: string;
+  onClick: () => void;
+}
+
+const DownloadButton: React.FC<DownloadButtonProps> = ({ label, onClick }) => (
+  <button
+    onClick={onClick}
+    className="w-full text-left flex items-center justify-between gap-2 px-3 py-2 text-sm font-mono text-gray-300 bg-mc-gray hover:bg-mc-light-gray rounded-md transition-colors"
+  >
+    <span>{label}</span>
+    <DownloadIcon className="w-4 h-4" />
   </button>
 );
 
