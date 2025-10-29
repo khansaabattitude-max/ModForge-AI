@@ -1,3 +1,70 @@
+/* ./src/styles/globals.css */
+
+/* Tailwind Directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Global Body Styles */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  background-color: #1A1A1A; /* Dark Background */
+  color: #ffffff;
+}
+
+/* Scrollbar Custom */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1A1A1A;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #39FF14;
+  border-radius: 4px;
+}
+
+/* Buttons Glow Effect */
+.animate-pulse-glow {
+  animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px #39FF14;
+  }
+  50% {
+    box-shadow: 0 0 16px #39FF14;
+  }
+}
+
+/* Code Block Styling */
+pre {
+  background-color: #2C2C2C;
+  color: #ffffff;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  font-family: 'Fira Code', monospace;
+}
+
+/* Textarea Focus */
+textarea:focus {
+  outline: none;
+  border-color: #39FF14;
+  box-shadow: 0 0 0 2px #39FF14/50;
+}
+
+/* Dark Prose for Explanation */
+.prose-invert {
+  color: #e5e5e5;
+}
+
+.prose-invert a {
+  color: #39FF14;
+}
