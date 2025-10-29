@@ -27,3 +27,17 @@
     "eslint-config-next": "14.2.4"
   }
 }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #111827;
+  color: white;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
