@@ -1,7 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./src/**/*.{js,ts,jsx,tsx,mdx}",
+    // Sirf 'src' ke bajaye, poore project ki files ko dekhega
+    "./**/*.{js,ts,jsx,tsx,mdx}", 
   ],
   theme: {
     extend: {
