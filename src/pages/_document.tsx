@@ -4,6 +4,8 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
+        {/* Google Search Console Verification */}
+        <meta name="google-site-verification" content="DoZI_GopcOg-q6fim50D5Wd62MXhg5_s_tXbGsOrV3M" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
