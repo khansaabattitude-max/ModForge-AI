@@ -1,3 +1,4 @@
+import '../styles/globals.css';
 import React, { useState, useCallback } from 'react';
 import Head from 'next/head';
 import type { ModData, OutputTab } from '../types';
