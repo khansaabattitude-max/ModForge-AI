@@ -1,5 +1,5 @@
-import type { AppProps } from 'next/app';
-import '../styles/globals.css'; // Correct relative path
+iimport type { AppProps } from 'next/app';
+import '../styles/globals.css'; // <-- USE RELATIVE PATH, NOT @/
 
 function MyApp({ Component, pageProps }: AppProps) {
   return <Component {...pageProps} />;
